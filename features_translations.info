@@ -1,0 +1,7 @@
+name = Features Translations
+description = Import and export string translations with Features.
+core = 6.x
+package = Features
+dependencies[] = features
+dependencies[] = locale
+
