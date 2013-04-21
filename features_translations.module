@@ -23,7 +23,7 @@ function translations_features_export_options() {
   foreach (language_list() as $langcode => $language) {
     if ($langcode == translations_features_string_source_language()) continue;
     foreach ($textgroups as $textgroup => $label) {
-      $options[$langcode . ':' . $textgroup] = $language->name . ': ' . $label;
+      $options[$langcode . ':' . $textgroup] = t($language->name) . ': ' . $label;
     }
   }
   return $options;
