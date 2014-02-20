@@ -45,6 +45,7 @@ function translations_features_string_source_language() {
 function translations_features_export($data, &$export, $module_name) {
   $export['features']['translations'] = array_combine(array_values($data), array_values($data));
   $export['dependencies']['features'] = 'features';
+  $export['dependencies']['features_translations'] = 'features_translations';
   return array();
 }
 
