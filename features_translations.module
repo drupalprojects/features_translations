@@ -114,9 +114,9 @@ function translations_features_revert($module_name) {
 }
 
 /**
- * Implementation of hook_features_export_rebuild().
+ * Implementation of hook_features_rebuild().
  */
-function translations_features_export_rebuild($module_name) {
+function translations_features_rebuild($module_name) {
   return translations_features_revert($module_name);
 }
 
