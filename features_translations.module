@@ -139,18 +139,19 @@ function _features_translations_locale_export_get_strings($language, $group, $fi
   $query->join('locales_target', 't', 's.lid = t.lid');
   $query->fields('s', array('lid', 'source', 'context', 'location'));
   $query->fields('t', array('translation', 'plid', 'plural'));
+  $query->addExpression('MD5(s.source)', 'source_md5');
   $query->condition('t.language', $language->language);
   $query->condition('s.textgroup', $group);
   //exclude unchanged lids
   if (count($uclids)) {
     $query->condition('s.lid', $uclids, 'NOT IN');
   }
-  $query->orderBy('s.lid');
+  $query->orderBy('t.plural', 'ASC')->orderBy('source_md5', 'ASC');
   $result = $query->execute()->fetchAll();
   $strings = array();
   $lids = array();
   foreach ($result as $string) {
-    $md5 = md5(serialize(array($string->source, $string->context, $string->plural)));
+    $md5 = $string->source_md5;
     $lids[$string->lid] = $md5;
     if (!empty($string->plid)) {
       if (!isset($lids[$string->plid])) {
@@ -161,7 +162,7 @@ function _features_translations_locale_export_get_strings($language, $group, $fi
         $string->plid = $lids[$string->plid];
       }
     }
-    unset($string->lid); // don't want the lid in the export
+    unset($string->lid, $string->source_md5); // don't want those in the export
     $strings[$md5] = $string;
   }
   return $strings;
