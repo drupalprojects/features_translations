@@ -21,8 +21,9 @@ function translations_features_export_options() {
   $options = array();
   $textgroups = module_invoke_all('locale', 'groups');
   foreach (language_list() as $langcode => $language) {
-    if ($langcode == translations_features_string_source_language()) continue;
     foreach ($textgroups as $textgroup => $label) {
+      if ($textgroup == 'default' && $langcode == 'en') continue;
+      if ($textgroup != 'default' && $langcode == translations_features_string_source_language()) continue;
       $options[$langcode . ':' . $textgroup] = t($language->name) . ': ' . $label;
     }
   }
