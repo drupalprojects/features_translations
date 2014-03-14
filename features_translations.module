@@ -144,7 +144,7 @@ function _features_translations_locale_export_get_strings($language, $group, $fi
   $query->join('locales_target', 't', 's.lid = t.lid');
   $query->fields('s', array('lid', 'source', 'context', 'location'));
   $query->fields('t', array('translation', 'plid', 'plural'));
-  $query->addExpression('MD5(s.source)', 'source_md5');
+  $query->addExpression('MD5(CONCAT(s.source, s.context))', 'source_md5');
   $query->condition('t.language', $language->language);
   $query->condition('s.textgroup', $group);
   //exclude unchanged lids
