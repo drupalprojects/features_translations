@@ -131,12 +131,14 @@ function _features_translations_locale_export_get_strings($language, $group, $fi
   $uclids = array();
   if (count($files)) {
     foreach ($files as $key => $value) {
-      $file_uri = $value[$language->language]->uri;
-      if (is_string($file_uri)) {
-        $file = new stdClass();
-        $file->uri = $file_uri;
-        $file->filename = $file_uri;
-        $uclids = array_merge($uclids, _features_translations_update_locale_import_po($file, $language->language, 'default'));
+      if (isset($value[$language->language]->uri)) {
+        $file_uri = $value[$language->language]->uri;
+        if (is_string($file_uri)) {
+          $file = new stdClass();
+          $file->uri = $file_uri;
+          $file->filename = $file_uri;
+          $uclids = array_merge($uclids, _features_translations_update_locale_import_po($file, $language->language, 'default'));
+        }
       }
     }
   }
