@@ -81,7 +81,8 @@ function translations_features_export_render($module_name, $data, $export = NULL
  * Implementation of hook_features_revert().
  */
 function translations_features_revert($module_name) {
-  include_once('includes/locale.inc');
+  include_once DRUPAL_ROOT . '/includes/locale.inc';
+
   $translations = features_get_default('translations', $module_name);
   if (!empty($translations)) {
     $report = array('updates' => 0, 'skips' => 0, 'additions' => 0, 'deletes' => 0);
