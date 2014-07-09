@@ -81,7 +81,7 @@ function translations_features_export_render($module_name, $data, $export = NULL
  * Implementation of hook_features_revert().
  */
 function translations_features_revert($module_name) {
-  include_once DRUPAL_ROOT . '/includes/locale.inc';
+  include_once('includes/locale.inc');
 
   $translations = features_get_default('translations', $module_name);
   if (!empty($translations)) {
@@ -217,7 +217,7 @@ function _features_translations_update_locale_import_po($file, $langcode, $group
  *   Result array of found lids on success, FALSE on failure.
  */
 function _features_translations_update_locale_import_read_po($file, $lang = NULL, $group = 'default') {
-  module_load_include('inc', 'locale');
+  include_once('includes/locale.inc');
 
   $fd = @fopen($file->uri, "rb"); // File will get closed by PHP on return
   if (!$fd) {
