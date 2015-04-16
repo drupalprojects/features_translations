@@ -4,28 +4,43 @@
  * Implementation of hook_features_api().
  */
 function features_translations_features_api() {
-  return array(
-    'translations' => array(
-      'name' => t('Translations'),
-      'default_hook' => 'translations_defaults',
-      'feature_source' => TRUE,
-      'default_file' => FEATURES_DEFAULTS_INCLUDED,
-    ),
+  $translations = array();
+  // Legacy option - we don't write to it anymore.
+  $translations['translations'] = array(
+    'name' => t('Translations'),
+    'default_hook' => 'translations_defaults',
+    'feature_source' => TRUE,
+    'default_file' => FEATURES_DEFAULTS_INCLUDED,
   );
+  foreach (language_list() as $langcode => $language) {
+    $translations["translations_{$langcode}"] = array(
+      'name' => t('Translations: !name', array('!name' => t($language->name))),
+      'default_hook' => "translations_{$langcode}_defaults",
+      'feature_source' => TRUE,
+      'base' => 'translations',
+      'default_file' => FEATURES_DEFAULTS_INCLUDED,
+      'supersedes' => 'translations',
+    );
+  }
+  return $translations;
 }
 
 /**
  * Implementation of hook_features_export_options().
  */
-function translations_features_export_options() {
+function translations_features_export_options($component) {
+  // Ignore legacy option.
+  if ($component == 'translations') return array();
+
   $options = array();
   $textgroups = module_invoke_all('locale', 'groups');
-  foreach (language_list() as $langcode => $language) {
-    foreach ($textgroups as $textgroup => $label) {
-      if ($textgroup == 'default' && $langcode == 'en') continue;
-      if ($textgroup != 'default' && $langcode == translations_features_string_source_language()) continue;
-      $options[$langcode . ':' . $textgroup] = t($language->name) . ': ' . $label;
-    }
+  list(,$langcode) = explode('_', $component);
+  $languages = language_list();
+  $language = $languages[$langcode];
+  foreach ($textgroups as $textgroup => $label) {
+    if ($textgroup == 'default' && $langcode == 'en') continue;
+    if ($textgroup != 'default' && $langcode == translations_features_string_source_language()) continue;
+    $options[$langcode . ':' . $textgroup] = t($language->name) . ': ' . $label;
   }
   return $options;
 }
@@ -44,7 +59,10 @@ function translations_features_string_source_language() {
  * Implementation of hook_features_export().
  */
 function translations_features_export($data, &$export, $module_name) {
-  $export['features']['translations'] = array_combine(array_values($data), array_values($data));
+  foreach ($data as $component) {
+    list($langcode,) = explode(':', $component);
+    $export['features']["translations_{$langcode}"][$component] = $component;
+  }
   $export['dependencies']['features'] = 'features';
   $export['dependencies']['features_translations'] = 'features_translations';
   return array();
@@ -55,9 +73,10 @@ function translations_features_export($data, &$export, $module_name) {
  */
 function translations_features_export_render($module_name, $data, $export = NULL) {
   $languages = language_list();
-  $code = array();
-  $code[] = '  $translations = array();';
-  $code[] = '  $translatables = array();';
+  $code = array(
+    '  $translations = array();',
+    '  $translatables = array();',
+  );
   $files = array();
   if (module_exists('l10n_update')) {
     if (function_exists('l10n_update_get_history')) { // l10n_update-7.x-1.x
@@ -66,6 +85,7 @@ function translations_features_export_render($module_name, $data, $export = NULL
       $files = l10n_update_get_file_history(); 
     }
   }
+  $langcode = ''; // won't change in the loop
   foreach ($data as $component) {
     list($langcode, $textgroup) = explode(':', $component);
     $strings = _features_translations_locale_export_get_strings($languages[$langcode], $textgroup, $files);
@@ -77,7 +97,7 @@ function translations_features_export_render($module_name, $data, $export = NULL
   }
   $code[] = '  return $translations;';
   $code = implode("\n", $code);
-  return array('translations_defaults' => $code);
+  return array("translations_{$langcode}_defaults" => $code);
 }
 
 /**
