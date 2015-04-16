@@ -57,6 +57,7 @@ function translations_features_export_render($module_name, $data, $export = NULL
   $languages = language_list();
   $code = array();
   $code[] = '  $translations = array();';
+  $code[] = '  $translatables = array();';
   $files = array();
   if (module_exists('l10n_update')) {
     if (function_exists('l10n_update_get_history')) { // l10n_update-7.x-1.x
@@ -70,6 +71,8 @@ function translations_features_export_render($module_name, $data, $export = NULL
     $strings = _features_translations_locale_export_get_strings($languages[$langcode], $textgroup, $files);
     foreach ($strings as $md5 => $string) {
       $code[] = "  \$translations['{$langcode}:{$textgroup}']['{$md5}'] = " . features_var_export($string, '  ') . ";";
+      // potx compatibility
+      $code[] = "  \$translatables[] = t('" . str_replace("'", "\'", $string->source) . "');";
     }
   }
   $code[] = '  return $translations;';
