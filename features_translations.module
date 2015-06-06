@@ -13,9 +13,10 @@ function features_translations_features_api() {
     'default_file' => FEATURES_DEFAULTS_INCLUDED,
   );
   foreach (language_list() as $langcode => $language) {
-    $translations["translations_{$langcode}"] = array(
+    $machine_langcode = strtr($langcode, array('-' => '_'));
+    $translations["translations_{$machine_langcode}"] = array(
       'name' => t('Translations: !name', array('!name' => t($language->name))),
-      'default_hook' => "translations_{$langcode}_defaults",
+      'default_hook' => "translations_{$machine_langcode}_defaults",
       'feature_source' => TRUE,
       'base' => 'translations',
       'default_file' => FEATURES_DEFAULTS_INCLUDED,
@@ -34,13 +35,14 @@ function translations_features_export_options($component) {
 
   $options = array();
   $textgroups = module_invoke_all('locale', 'groups');
-  list(,$langcode) = explode('_', $component);
+  list(,$machine_langcode) = explode('_', $component, 2);
+  $langcode = strtr($machine_langcode, array('_' => '-'));
   $languages = language_list();
   $language = $languages[$langcode];
   foreach ($textgroups as $textgroup => $label) {
     if ($textgroup == 'default' && $langcode == 'en') continue;
     if ($textgroup != 'default' && $langcode == translations_features_string_source_language()) continue;
-    $options[$langcode . ':' . $textgroup] = t($language->name) . ': ' . $label;
+    $options[$machine_langcode . ':' . $textgroup] = t($language->name) . ': ' . $label;
   }
   return $options;
 }
@@ -60,8 +62,8 @@ function translations_features_string_source_language() {
  */
 function translations_features_export($data, &$export, $module_name) {
   foreach ($data as $component) {
-    list($langcode,) = explode(':', $component);
-    $export['features']["translations_{$langcode}"][$component] = $component;
+    list($machine_langcode,) = explode(':', $component);
+    $export['features']["translations_{$machine_langcode}"][$component] = $component;
   }
   $export['dependencies']['features'] = 'features';
   $export['dependencies']['features_translations'] = 'features_translations';
@@ -77,12 +79,13 @@ function translations_features_export_render($module_name, $data, $export = NULL
     '  $translations = array();',
     '  $translatables = array();',
   );
-  $langcode = ''; // won't change in the loop
+  $machine_langcode = ''; // won't change in the loop
   foreach ($data as $component) {
-    list($langcode, $textgroup) = explode(':', $component);
+    list($machine_langcode, $textgroup) = explode(':', $component);
+    $langcode = strtr($machine_langcode, array('_' => '-'));
     $strings = _features_translations_locale_export_get_strings($languages[$langcode], $textgroup);
     foreach ($strings as $md5 => $string) {
-      $code[] = "  \$translations['{$langcode}:{$textgroup}']['{$md5}'] = " . features_var_export($string, '  ') . ";";
+      $code[] = "  \$translations['{$machine_langcode}:{$textgroup}']['{$md5}'] = " . features_var_export($string, '  ') . ";";
       // potx compatibility
       $code[] = "  \$translatables[] = t('" .
                 str_replace("'", "\'", $string->source) .
@@ -93,21 +96,22 @@ function translations_features_export_render($module_name, $data, $export = NULL
   }
   $code[] = '  return $translations;';
   $code = implode("\n", $code);
-  return array("translations_{$langcode}_defaults" => $code);
+  return array("translations_{$machine_langcode}_defaults" => $code);
 }
 
 /**
  * Implementation of hook_features_revert().
  */
-function translations_features_revert($module_name) {
+function translations_features_revert($module_name, $component) {
   include_once('includes/locale.inc');
 
-  $translations = features_get_default('translations', $module_name);
+  $translations = features_get_default($component, $module_name);
   if (!empty($translations)) {
     $report = array('updates' => 0, 'skips' => 0, 'additions' => 0, 'deletes' => 0);
     $lids = array();
     foreach ($translations as $key => $strings) {
-      list($langcode, $textgroup) = explode(':', $key);
+      list($machine_langcode, $textgroup) = explode(':', $key);
+      $langcode = strtr($machine_langcode, array('_' => '-'));
       foreach ($strings as $md5 => $string) {
         if (!empty($string['plid'])) {
           if (!isset($lids[$string['plid']])) {
@@ -148,7 +152,7 @@ function translations_features_revert($module_name) {
       }
     }
     watchdog('features', 'Translations: results for importing feature %feature: %report', array(
-      '%feature' => $module_name,
+      '%feature' => $module_name . ':' . $component,
       '%report' => var_export($report, TRUE),
     ), WATCHDOG_INFO);
   }
