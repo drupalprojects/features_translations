@@ -77,7 +77,6 @@ function translations_features_export_render($module_name, $data, $export = NULL
   $languages = language_list();
   $code = array(
     '  $translations = array();',
-    '  $translatables = array();',
   );
   $machine_langcode = ''; // won't change in the loop
   foreach ($data as $component) {
@@ -87,7 +86,7 @@ function translations_features_export_render($module_name, $data, $export = NULL
     foreach ($strings as $md5 => $string) {
       $code[] = "  \$translations['{$machine_langcode}:{$textgroup}']['{$md5}'] = " . features_var_export($string, '  ') . ";";
       // potx compatibility
-      $code[] = "  \$translatables[] = t('" .
+      $code[] = "  t('" .
                 str_replace("'", "\'", $string->source) .
                 "', array(), array('context' => '" .
                 str_replace("'", "\'", $string->context) .
